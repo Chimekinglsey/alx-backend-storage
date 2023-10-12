@@ -1,0 +1,8 @@
+mysql> DELIMITER $$ ;
+
+	Now the default DELIMITER is "$$".
+	mysql> SELECT * FROM user $$
+mysql> DELIMITER ; $$
+	Now the default DELIMITER has beeen reset to ';'
+	syntax "DELIMITER NEW OLD"
+
