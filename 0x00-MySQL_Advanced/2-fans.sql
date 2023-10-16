@@ -1,6 +1,7 @@
 -- 2. Best band ever!
 -- A script to rank country origins of bands
-SELECT origin, fans AS nb_fans
+SELECT TRIM(origin), SUM(fans) AS nb_fans
 FROM metal_bands
-ORDER BY fans
+GROUP BY TRIM(origin)
+ORDER BY nb_fans
 DESC;
