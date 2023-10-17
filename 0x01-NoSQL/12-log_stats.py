@@ -17,14 +17,6 @@ def log_stat(nginx_collection):
     print('{} status check'.format(check_count_stat))
 
 
-
-def run():
-    '''
-    Initiates DB engine to provide stats
-    '''
+if __name__ == '__main__':
     client = MongoClient(host='localhost', port=27017)
     log_stat(client.logs.nginx)
-
-
-if __name__ == '__main__':
-    run()
