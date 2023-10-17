@@ -5,3 +5,4 @@
     What is and how to implement views in MySQL
     What is and how to implement triggers in MySQL
 
+Basic operations with mongodb
