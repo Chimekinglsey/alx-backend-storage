@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Using ODM for mongodb"""
-import mongoengine, pymongo
 
 
 def list_all(mongo_collection):
