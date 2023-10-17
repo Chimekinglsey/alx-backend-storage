@@ -1,0 +1,3 @@
+NoSQL (`Not SQL`) is the relatively new database design that is document oriented.
+It remedies most of the flaws of SQL like manual sharding, rigid schema and associated hassles, poor scaling and others. Coupled with the flexibility of NoSQL like MongoDB and DynamoDB, vertical scaling, speed and dynamism is the new trend.
+In this project, we will scratch mongodb and it's Object Document Mapper (`mongoengine`) for Python (pymongo)
