@@ -9,7 +9,7 @@ import uuid
 
 class Cache:
     """simulate a redis"""
-    def __init__(self, r: redis.Redis = redis.Redis()) -> None:
+    def __init__(self, r: redis.Redis = redis.Redis()):
         self._redis = r
         self._redis.flushdb()
 
