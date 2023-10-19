@@ -5,6 +5,63 @@
 import redis
 from typing import Union, Callable, Optional, Any
 import uuid
+from functools import wraps
+
+
+def count_calls(method: Callable) -> Callable:
+    '''Tracks the number of calls made to a method in Cache class.
+    '''
+    @wraps(method)
+    def invoker(self, *args, **kwargs) -> Any:
+        '''Invokes the given method after incrementing its call counter.
+        '''
+        if isinstance(self._redis, redis.Redis):
+            self._redis.incr(method.__qualname__)
+        return method(self, *args, **kwargs)
+    return invoker
+
+
+def call_history(method: Callable) -> Callable:
+    '''Tracks the call details of a method in a Cache class.
+    '''
+    @wraps(method)
+    def invoker(self, *args, **kwargs) -> Any:
+        '''Returns the method's output after storing its inputs and output.
+        '''
+        in_key = '{}:inputs'.format(method.__qualname__)
+        out_key = '{}:outputs'.format(method.__qualname__)
+        if isinstance(self._redis, redis.Redis):
+            self._redis.rpush(in_key, str(args))
+        output = method(self, *args, **kwargs)
+        if isinstance(self._redis, redis.Redis):
+            self._redis.rpush(out_key, output)
+        return output
+    return invoker
+
+
+def replay(fn: Callable) -> None:
+    '''Displays the call history of a Cache class' method.
+    '''
+    if fn is None or not hasattr(fn, '__self__'):
+        return
+    redis_store = getattr(fn.__self__, '_redis', None)
+    if not isinstance(redis_store, redis.Redis):
+        return
+    fxn_name = fn.__qualname__
+    in_key = '{}:inputs'.format(fxn_name)
+    out_key = '{}:outputs'.format(fxn_name)
+    fxn_call_count = 0
+    if redis_store.exists(fxn_name) != 0:
+        fxn_call_count = int(redis_store.get(fxn_name))
+    print('{} was called {} times:'.format(fxn_name, fxn_call_count))
+    fxn_inputs = redis_store.lrange(in_key, 0, -1)
+    fxn_outputs = redis_store.lrange(out_key, 0, -1)
+    for fxn_input, fxn_output in zip(fxn_inputs, fxn_outputs):
+        print('{}(*{}) -> {}'.format(
+            fxn_name,
+            fxn_input.decode("utf-8"),
+            fxn_output,
+        ))
 
 
 class Cache:
@@ -13,6 +70,8 @@ class Cache:
         self._redis = redis.Redis(host=host, port=port, db=db)
         self._redis.flushdb()
 
+    @call_history
+    @count_calls
     def store(self, data: Union[str, bytes, int, float]) -> str:
         """generate a random uuid, store it in Redis, return the key"""
         key = str(uuid.uuid4())
@@ -25,17 +84,6 @@ class Cache:
             ) -> Union[str, bytes, int, float, None]:
         """
             Retrieve data from the cache using the provided key.
-
-            Args:
-                key (str): The key to look up in the cache.
-                fn (Optional[Callable[[Union[str, bytes, int, float]], Any]]): An optional conversion function
-                    to transform the retrieved data to the desired format.
-
-            Returns:
-                Union[str, bytes, int, float, None]: The retrieved data from the cache, optionally converted by the provided
-                conversion function. If the key does not exist in the cache, it returns None.
-
-            If `fn` is provided, the retrieved data is passed through the conversion function before being returned.
         """
         if key in self._redis:
             data = self._redis.get(key)
